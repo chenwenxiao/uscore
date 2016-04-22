@@ -36,18 +36,24 @@ static struct pseudodesc idt_pd = {
 /* idt_init - initialize IDT to each of the entry points in kern/trap/vectors.S */
 void
 idt_init(void) {
-     /* LAB1 YOUR CODE : STEP 2 */
-     /* (1) Where are the entry addrs of each Interrupt Service Routine (ISR)?
-      *     All ISR's entry addrs are stored in __vectors. where is uintptr_t __vectors[] ?
-      *     __vectors[] is in kern/trap/vector.S which is produced by tools/vector.c
-      *     (try "make" command in lab1, then you will find vector.S in kern/trap DIR)
-      *     You can use  "extern uintptr_t __vectors[];" to define this extern variable which will be used later.
-      * (2) Now you should setup the entries of ISR in Interrupt Description Table (IDT).
-      *     Can you see idt[256] in this file? Yes, it's IDT! you can use SETGATE macro to setup each item of IDT
-      * (3) After setup the contents of IDT, you will let CPU know where is the IDT by using 'lidt' instruction.
-      *     You don't know the meaning of this instruction? just google it! and check the libs/x86.h to know more.
-      *     Notice: the argument of lidt is idt_pd. try to find it!
-      */
+    /* LAB1 2013011317 : STEP 2 */
+    /* (1) Where are the entry addrs of each Interrupt Service Routine (ISR)?
+     *     All ISR's entry addrs are stored in __vectors. where is uintptr_t __vectors[] ?
+     *     __vectors[] is in kern/trap/vector.S which is produced by tools/vector.c
+     *     (try "make" command in lab1, then you will find vector.S in kern/trap DIR)
+     *     You can use  "extern uintptr_t __vectors[];" to define this extern variable which will be used later.
+     * (2) Now you should setup the entries of ISR in Interrupt Description Table (IDT).
+     *     Can you see idt[256] in this file? Yes, it's IDT! you can use SETGATE macro to setup each item of IDT
+     * (3) After setup the contents of IDT, you will let CPU know where is the IDT by using 'lidt' instruction.
+     *     You don't know the meaning of this instruction? just google it! and check the libs/x86.h to know more.
+     *     Notice: the argument of lidt is idt_pd. try to find it!
+     */
+    extern uintptr_t __vectors[];
+    int i;
+    for (i = 0; i < 256; ++i) //The size of idt is 256
+        SETGATE(idt[i], 0, GD_KTEXT, __vectors[i], DPL_KERNEL);// Use SETGATE macro to setup
+    SETGATE(idt[T_SWITCH_TOK], 0, GD_KTEXT, __vectors[T_SWITCH_TOK], DPL_USER); // switch
+    lidt(&idt_pd);
 }
 
 static const char *
@@ -177,15 +183,18 @@ trap_dispatch(struct trapframe *tf) {
         break;
     case IRQ_OFFSET + IRQ_TIMER:
 #if 0
-    LAB3 : If some page replacement algorithm(such as CLOCK PRA) need tick to change the priority of pages, 
-    then you can add code here. 
+    LAB3 : If some page replacement algorithm(such as CLOCK PRA) need tick to change the priority of pages,
+    then you can add code here.
 #endif
-        /* LAB1 YOUR CODE : STEP 3 */
+        /* LAB1 2013011317 : STEP 3 */
         /* handle the timer interrupt */
         /* (1) After a timer interrupt, you should record this event using a global variable (increase it), such as ticks in kern/driver/clock.c
-         * (2) Every TICK_NUM cycle, you can print some info using a funciton, such as print_ticks().
-         * (3) Too Simple? Yes, I think so!
-         */
+        * (2) Every TICK_NUM cycle, you can print some info using a funciton, such as print_ticks().
+        * (3) Too Simple? Yes, I think so!
+        */
+        ++ticks;
+        if (ticks % TICK_NUM == 0)
+            print_ticks();
         break;
     case IRQ_OFFSET + IRQ_COM1:
         c = cons_getc();
@@ -223,4 +232,3 @@ trap(struct trapframe *tf) {
     // dispatch based on what type of trap occurred
     trap_dispatch(tf);
 }
-
