@@ -7,4 +7,3 @@ umain(void) {
     int ret = main();
     exit(ret);
 }
-
