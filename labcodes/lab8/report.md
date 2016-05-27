@@ -98,3 +98,5 @@ UNIX的PIPE机制的详细设计方案：
 在这里面我们发现对于name的查找就是遍历并且比较name与entry->name。那么我们需要创建一个entry，这个entry的inode和目标文件的inode相同，但是拥有不同的filename。
 
 那么具体的步骤就是通过sfs_dirent_search_nolock可以获取到目标文件的entry，得到它的entry->ino，之后在创建一个entry，其name等于链接文件的name，而ino和目标文件的ino相同。
+
+实验的运行情况"make qemu > log.txt"在log.txt文件中有体现。
